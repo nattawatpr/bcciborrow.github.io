@@ -1,0 +1,1060 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>BCC ComArts i-Borrow — Production Equipment Loan Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0B0E11; --void-2:#0E1318; --panel:#141A21; --well:#0F151B;
+    --line:#243039; --line-soft:#1A222B;
+    --ink:#E9EEF3; --muted:#7C8A98; --faint:#56636F;
+    --amber:#FFB02E; --cyan:#39DAD2; --rec:#FF4D52; --ok:#54D98C;
+    --cyan-soft:#0f2b2a;
+    --violet:#A78BFA; --violet-soft:#1d1733; --violet-line:rgba(167,139,250,.32);
+    --r:14px;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --display:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--body);
+    background:
+      radial-gradient(1100px 600px at 80% -10%, rgba(255,176,46,.06), transparent 60%),
+      radial-gradient(900px 500px at -5% 110%, rgba(57,218,210,.05), transparent 55%),
+      var(--void);
+    color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased;
+    padding:22px 18px 60px; line-height:1.5;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(var(--line-soft) 1px,transparent 1px),linear-gradient(90deg,var(--line-soft) 1px,transparent 1px);
+    background-size:46px 46px;opacity:.16;
+    mask:radial-gradient(circle at 50% 30%, #000 0%, transparent 80%);
+  }
+  .wrap{max-width:760px;margin:0 auto;position:relative;z-index:1}
+
+  /* header */
+  .bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    border:1px solid var(--line);background:linear-gradient(180deg,var(--panel),var(--void-2));
+    border-radius:var(--r);padding:14px 16px;margin-bottom:14px;}
+  .brand{display:flex;align-items:center;gap:12px;min-width:0}
+  .glyph{width:40px;height:40px;flex:none;border-radius:10px;border:1px solid var(--line);background:var(--well);display:grid;place-items:center;color:var(--amber)}
+  .brand h1{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.04em;margin:0;line-height:1}
+  .brand p{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin:4px 0 0}
+  .bar .right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .clock{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;text-align:right}
+  .clock .d{color:var(--faint);font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+  .status{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:999px;padding:7px 11px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--faint)}
+  .status.live{color:var(--rec);border-color:rgba(255,77,82,.35)}
+  .status.live .dot{background:var(--rec);animation:rec 1.6s infinite}
+  .status.pend{color:var(--amber);border-color:rgba(255,176,46,.35)}
+  .status.pend .dot{background:var(--amber)}
+  @keyframes rec{0%{box-shadow:0 0 0 0 rgba(255,77,82,.55)}70%{box-shadow:0 0 0 7px rgba(255,77,82,0)}100%{box-shadow:0 0 0 0 rgba(255,77,82,0)}}
+
+  .adminbtn{position:relative;display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);background:var(--well);border-radius:999px;padding:8px 13px;cursor:pointer;transition:.15s}
+  .adminbtn:hover{border-color:var(--violet);color:var(--ink)}
+  .adminbtn svg{color:var(--violet)}
+  .admin-badge{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--amber);color:#1a1305;font-family:var(--mono);font-size:10px;font-weight:600;display:grid;place-items:center;box-shadow:0 0 0 2px var(--void)}
+  .admin-badge[hidden]{display:none}
+
+  /* mode dial */
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--well);border:1px solid var(--line);border-radius:12px;padding:6px;margin-bottom:16px}
+  .modes button{appearance:none;border:0;background:transparent;color:var(--muted);cursor:pointer;font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;padding:12px 10px;border-radius:8px;transition:.18s;display:flex;align-items:center;justify-content:center;gap:9px}
+  .modes button .num{font-size:10px;color:var(--faint)}
+  .modes button[aria-selected="true"]{background:linear-gradient(180deg,#1d262f,#161d24);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+  #studentScreen .modes button[aria-selected="true"].out{color:var(--amber)}
+  #studentScreen .modes button[aria-selected="true"].in{color:var(--cyan)}
+  #adminScreen .modes button[aria-selected="true"]{color:var(--violet)}
+
+  /* viewfinder frame */
+  .frame{position:relative;border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(180deg,var(--panel),var(--void-2));padding:22px}
+  .frame::before,.frame::after{content:"";position:absolute;width:18px;height:18px;border-color:var(--amber);opacity:.85;pointer-events:none}
+  .frame::before{top:9px;left:9px;border-left:2px solid;border-top:2px solid;border-top-left-radius:4px}
+  .frame::after{top:9px;right:9px;border-right:2px solid;border-top:2px solid;border-top-right-radius:4px}
+  .frame i.bl{position:absolute;bottom:9px;left:9px;width:18px;height:18px;border-left:2px solid var(--amber);border-bottom:2px solid var(--amber);border-bottom-left-radius:4px;opacity:.85}
+  .frame i.br{position:absolute;bottom:9px;right:9px;width:18px;height:18px;border-right:2px solid var(--amber);border-bottom:2px solid var(--amber);border-bottom-right-radius:4px;opacity:.85}
+  .in-mode #studentScreen .frame::before,.in-mode #studentScreen .frame::after,.in-mode #studentScreen .frame i.bl,.in-mode #studentScreen .frame i.br{border-color:var(--cyan)}
+  #adminScreen .frame::before,#adminScreen .frame::after,#adminScreen .frame i.bl,#adminScreen .frame i.br{border-color:var(--violet)}
+
+  .head{display:flex;align-items:center;gap:12px;margin:2px 2px 18px}
+  .head h2{font-family:var(--display);font-weight:600;font-size:16px;letter-spacing:.02em;margin:0}
+  .head .meter{display:flex;gap:3px;margin-left:auto}
+  .head .meter span{width:3px;height:13px;background:var(--line);border-radius:1px}
+  .head .meter span:nth-child(-n+4){background:var(--amber);opacity:.8}
+  .in-mode #studentScreen .head .meter span:nth-child(-n+4){background:var(--cyan)}
+  #adminScreen .head .meter span:nth-child(-n+4){background:var(--violet)}
+
+  /* form */
+  .field{margin-bottom:16px}
+  .frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:560px){.frow{grid-template-columns:1fr;gap:0}}
+  label.lab{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  label.lab .tag{color:var(--faint)}
+  label.lab .req{color:var(--amber);font-size:9px;letter-spacing:.1em}
+  input,textarea{width:100%;background:var(--well);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-family:var(--body);font-size:15px;padding:13px 14px;transition:.16s;outline:none;resize:vertical}
+  input::placeholder,textarea::placeholder{color:var(--faint)}
+  input:focus,textarea:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,176,46,.13)}
+  .field.bad input,.field.bad textarea{border-color:var(--rec);box-shadow:0 0 0 3px rgba(255,77,82,.12)}
+  .err{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--rec);margin-top:7px;display:none}
+  .field.bad .err{display:block}
+
+  .cat-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:14px 2px 8px;display:flex;align-items:center;gap:8px}
+  .cat-label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+  .cat-label:first-of-type{margin-top:0}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .item{border:1px solid var(--line);background:var(--well);border-radius:11px;padding:12px 13px;cursor:pointer;display:flex;align-items:center;gap:11px;transition:.15s;user-select:none}
+  .item:hover{border-color:#33404b}
+  .item .ico{width:30px;height:30px;flex:none;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);background:var(--void-2)}
+  .item .nm{font-size:14px;font-weight:500;flex:1;min-width:0}
+  .item .nm small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:400;margin-top:1px}
+  .item[data-on="1"]{border-color:var(--cyan);background:linear-gradient(180deg,rgba(57,218,210,.08),var(--well));box-shadow:0 0 0 1px rgba(57,218,210,.25),0 0 22px -10px rgba(57,218,210,.5)}
+  .item[data-on="1"] .ico{color:var(--cyan);border-color:rgba(57,218,210,.4)}
+  .qty{display:flex;align-items:center;gap:2px;flex:none}
+  .qty[hidden]{display:none}
+  .qty button{width:26px;height:26px;border:1px solid var(--line);background:var(--void-2);color:var(--ink);border-radius:7px;cursor:pointer;font-size:15px;line-height:1;display:grid;place-items:center;transition:.12s}
+  .qty button:hover{border-color:var(--cyan)}
+  .qty .n{font-family:var(--mono);font-size:13px;min-width:20px;text-align:center;color:var(--cyan)}
+
+  .cta{width:100%;margin-top:22px;border:0;border-radius:11px;cursor:pointer;font-family:var(--mono);font-size:13px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:16px;color:#1a1305;background:linear-gradient(180deg,#FFC04F,var(--amber));box-shadow:0 8px 26px -12px rgba(255,176,46,.8);transition:.16s;display:flex;align-items:center;justify-content:center;gap:10px}
+  .cta:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  .cta:active{transform:translateY(0)}
+
+  .sum{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .chip{font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--cyan);border:1px solid rgba(57,218,210,.3);background:var(--cyan-soft);border-radius:999px;padding:5px 11px}
+
+  /* loans / returns */
+  .search{margin-bottom:16px;position:relative}
+  .search input{padding-left:40px}
+  .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .grouplabel{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:4px 2px 10px;display:flex;align-items:center;gap:8px}
+  .grouplabel::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+  .grouplabel + .grouplabel{margin-top:0}
+  .gap{height:18px}
+  .loan{border:1px solid var(--line);background:var(--well);border-radius:12px;padding:15px;margin-bottom:10px;transition:.18s}
+  .loan:hover{border-color:#33404b}
+  .loan .top{display:flex;align-items:flex-start;gap:12px;margin-bottom:11px}
+  .loan .id{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--ink);letter-spacing:.02em}
+  .loan .who{font-size:13px;color:var(--ink);margin-top:3px}
+  .loan .when{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:3px}
+  .loan .purpose{font-size:13.5px;color:var(--muted);margin:0 0 11px}
+  .loan .detail{font-size:12.5px;color:var(--faint);border-left:2px solid var(--line);padding-left:10px;margin:0 0 12px}
+  .loan .items{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:13px}
+  .loan .items .chip{color:var(--ink);border-color:var(--line);background:var(--void-2)}
+  .loan .items .chip b{color:var(--cyan);font-weight:600}
+  .checkin{width:100%;border:1px solid rgba(57,218,210,.4);background:var(--cyan-soft);color:var(--cyan);border-radius:9px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:11px;transition:.15s;font-weight:600}
+  .checkin:hover{background:var(--cyan);color:#04201f}
+  .pill{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:4px 9px;display:flex;align-items:center;gap:6px;flex:none;color:var(--faint)}
+  .pill.on{color:var(--rec);border-color:rgba(255,77,82,.35)} .pill.on .dot{background:var(--rec)}
+  .pill.pend{color:var(--amber);border-color:rgba(255,176,46,.35)} .pill.pend .dot{background:var(--amber)}
+  .pill.ret{color:var(--cyan);border-color:rgba(57,218,210,.35)} .pill.ret .dot{background:var(--cyan)}
+
+  .empty{text-align:center;padding:42px 20px;color:var(--faint)}
+  .empty .eico{width:54px;height:54px;border:1px solid var(--line);border-radius:14px;display:grid;place-items:center;margin:0 auto 16px;color:var(--line)}
+  .empty h3{font-family:var(--display);font-weight:600;color:var(--muted);font-size:15px;margin:0 0 6px}
+  .empty p{font-size:13px;margin:0;max-width:300px;margin-inline:auto}
+
+  /* admin top */
+  .admin-top{display:flex;align-items:center;gap:12px;border:1px solid var(--violet-line);background:linear-gradient(180deg,var(--violet-soft),var(--void-2));border-radius:var(--r);padding:12px 15px;margin-bottom:14px}
+  .admin-top .at-ico{width:36px;height:36px;flex:none;border-radius:9px;border:1px solid var(--violet-line);background:rgba(167,139,250,.08);display:grid;place-items:center;color:var(--violet)}
+  .admin-top h2{font-family:var(--display);font-size:15px;margin:0;letter-spacing:.02em}
+  .admin-top p{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--violet);opacity:.8;margin:3px 0 0}
+  .logout{margin-left:auto;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);background:var(--well);border-radius:9px;padding:9px 13px;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:7px}
+  .logout:hover{border-color:var(--rec);color:var(--rec)}
+
+  /* request cards */
+  .req .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .req .acts button{border-radius:9px;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:12px;transition:.15s;font-weight:600}
+  .approve{border:1px solid rgba(84,217,140,.4);background:rgba(84,217,140,.08);color:var(--ok)}
+  .approve:hover{background:var(--ok);color:#053a20}
+  .decline{border:1px solid rgba(255,77,82,.4);background:rgba(255,77,82,.07);color:var(--rec)}
+  .decline:hover{background:var(--rec);color:#2a0608}
+
+  /* catalog manager */
+  .add-form{border:1px solid var(--line);background:var(--well);border-radius:12px;padding:16px;margin-bottom:20px}
+  .add-form .formrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .add-form .field{margin:0}
+  .iconpick{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+  .iconpick button{width:38px;height:38px;border:1px solid var(--line);background:var(--void-2);border-radius:9px;color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:.12s}
+  .iconpick button:hover{border-color:var(--violet)}
+  .iconpick button[aria-pressed="true"]{border-color:var(--violet);color:var(--violet);background:var(--violet-soft)}
+  .addbtn{width:100%;margin-top:14px;border:0;border-radius:10px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:14px;color:#160f2e;background:linear-gradient(180deg,#BBA4FF,var(--violet));box-shadow:0 8px 24px -12px rgba(167,139,250,.85);transition:.15s;display:flex;align-items:center;justify-content:center;gap:9px}
+  .addbtn:hover{filter:brightness(1.06);transform:translateY(-1px)}
+  .mrow{display:flex;align-items:center;gap:11px;border:1px solid var(--line);background:var(--well);border-radius:10px;padding:11px 12px;margin-bottom:8px}
+  .mrow .ico{width:30px;height:30px;flex:none;border-radius:8px;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);background:var(--void-2)}
+  .mrow .mname{font-size:14px;font-weight:500;flex:1;min-width:0}
+  .mrow .mname small{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:2px}
+  .mrow .mact{margin-left:auto;display:flex;align-items:center;gap:7px}
+  .rm{width:32px;height:32px;border:1px solid var(--line);background:var(--void-2);color:var(--faint);border-radius:8px;cursor:pointer;display:grid;place-items:center;transition:.13s}
+  .rm:hover{border-color:var(--rec);color:var(--rec)}
+  .cf{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--rec)}
+  .mini{border:1px solid var(--line);background:var(--void-2);border-radius:7px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:7px 9px;cursor:pointer;transition:.13s}
+  .mini.yes{color:var(--rec);border-color:rgba(255,77,82,.4)} .mini.yes:hover{background:var(--rec);color:#2a0608}
+  .mini.no:hover{border-color:var(--muted);color:var(--ink)}
+
+  /* ledger */
+  .ledger{display:flex;justify-content:center;flex-wrap:wrap;gap:22px;margin-top:14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+  .ledger b{color:var(--muted);font-weight:600}
+
+  /* modal */
+  .modal-back{position:fixed;inset:0;background:rgba(5,8,11,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:center;z-index:60;padding:20px}
+  .modal-back[hidden]{display:none}
+  .modal{width:min(380px,100%);border:1px solid var(--violet-line);background:linear-gradient(180deg,var(--panel),var(--void-2));border-radius:16px;padding:26px;position:relative}
+  .modal .x{position:absolute;top:14px;right:14px;width:30px;height:30px;border:1px solid var(--line);background:var(--well);color:var(--muted);border-radius:8px;cursor:pointer;display:grid;place-items:center;transition:.13s}
+  .modal .x:hover{border-color:var(--rec);color:var(--rec)}
+  .modal .lock{width:46px;height:46px;border-radius:12px;border:1px solid var(--violet-line);background:rgba(167,139,250,.08);display:grid;place-items:center;color:var(--violet);margin-bottom:16px}
+  .modal h3{font-family:var(--display);font-size:18px;margin:0 0 5px}
+  .modal>p{color:var(--muted);font-size:13px;margin:0 0 18px}
+  .modal input:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(167,139,250,.16)}
+  .merr{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--rec);margin-top:9px;min-height:14px}
+  .mbtns{display:flex;gap:8px;margin-top:16px}
+  .enter{flex:1;border:0;border-radius:10px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:13px;color:#160f2e;background:linear-gradient(180deg,#BBA4FF,var(--violet))}
+  .enter:hover{filter:brightness(1.06)}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,30px);opacity:0;pointer-events:none;display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px 16px;font-size:13.5px;box-shadow:0 18px 50px -16px rgba(0,0,0,.7);transition:.32s cubic-bezier(.2,.8,.2,1);z-index:70;max-width:90vw}
+  .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  .toast .tico{width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;color:var(--muted);border:1px solid currentColor}
+  .toast.out{ } .toast.out .tico{color:var(--amber)}
+  .toast.in .tico{color:var(--cyan)}
+  .toast.ok .tico{color:var(--ok)}
+  .toast.no .tico{color:var(--rec)}
+  .toast.adm .tico{color:var(--violet)}
+
+  /* extra status pills */
+  .pill.done{color:var(--ok);border-color:rgba(84,217,140,.35)} .pill.done .dot{background:var(--ok)}
+  .pill.dec{color:var(--faint);border-color:var(--line)} .pill.dec .dot{background:var(--faint)}
+
+  /* admin tabs */
+  #adminScreen .modes{grid-template-columns:repeat(5,1fr)}
+
+  /* due date line */
+  .due{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin:0 0 12px;display:flex;align-items:center;gap:7px}
+  .due svg{width:13px;height:13px;flex:none}
+  .due.over{color:var(--rec)}
+
+  /* admin accounts */
+  .youtag{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--violet);border:1px solid var(--violet-line);border-radius:999px;padding:2px 6px;margin-left:7px}
+  .mrow .pw{letter-spacing:.06em}
+  .pwedit{padding:8px 10px !important;font-size:13px !important}
+  .mini.savepw{color:var(--ok);border-color:rgba(84,217,140,.4)} .mini.savepw:hover{background:var(--ok);color:#053a20}
+
+  /* backup */
+  .note{font-size:13px;color:var(--muted);margin:0 0 16px;line-height:1.55}
+  .note.small{font-size:12px;color:var(--faint);margin:10px 0 0}
+  input[type=file]{padding:11px 12px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  input[type=file]::file-selector-button{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--violet);background:var(--violet-soft);border:1px solid var(--violet-line);border-radius:8px;padding:8px 12px;margin-right:12px;cursor:pointer}
+  input[type=file]::file-selector-button:hover{border-color:var(--violet)}
+
+  /* history */
+  .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+  .filters button{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);background:var(--well);border-radius:999px;padding:7px 11px;cursor:pointer;transition:.13s}
+  .filters button:hover{border-color:var(--violet)}
+  .filters button[aria-pressed="true"]{border-color:var(--violet);color:var(--violet);background:var(--violet-soft)}
+  .stamps{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:2px}
+  .stamps b{color:var(--muted);font-weight:500}
+  .remark{margin:0 0 12px;font-size:12.5px;color:var(--ink);background:rgba(84,217,140,.06);border:1px solid rgba(84,217,140,.25);border-radius:9px;padding:9px 11px}
+  .remark .rlabel{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ok);margin-bottom:4px}
+
+  /* return-remark modal */
+  .modal .lock.okl{border-color:rgba(84,217,140,.4);background:rgba(84,217,140,.08);color:var(--ok)}
+  .modal .forwhom{font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--cyan);background:var(--cyan-soft);border:1px solid rgba(57,218,210,.3);border-radius:9px;padding:9px 11px;margin-bottom:14px}
+  .cancel{border:1px solid var(--line);background:var(--well);color:var(--muted);border-radius:10px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding:13px}
+  .cancel:hover{border-color:var(--muted);color:var(--ink)}
+  .enter.okbtn{background:linear-gradient(180deg,#74E6A4,var(--ok));color:#053a20}
+  @media(max-width:560px){#adminScreen .modes{grid-template-columns:repeat(2,1fr)} #adminScreen .modes button{font-size:11px;letter-spacing:.06em;padding:11px 6px} #adminScreen .modes .num{display:none}}
+
+  [hidden]{display:none!important}
+  @media (max-width:560px){ .grid{grid-template-columns:1fr} .add-form .formrow{grid-template-columns:1fr} .brand p{display:none} .frame{padding:18px 15px} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="bar">
+    <div class="brand">
+      <div class="glyph" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h13l2-3h3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><circle cx="11" cy="13" r="3.4"/></svg></div>
+      <div><h1>BCC ComArts i-Borrow</h1><p>Production Equipment Loan Desk</p></div>
+    </div>
+    <div class="right">
+      <div class="status" id="status"><span class="dot"></span><span id="statusTxt">All clear</span></div>
+      <div class="clock"><div id="time">--:--:--</div><div class="d" id="date">———</div></div>
+      <button class="adminbtn" id="adminBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        Admin<span class="admin-badge" id="adminBadge" hidden>0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= STUDENT SCREEN ================= -->
+  <div id="studentScreen">
+    <div class="modes" role="tablist" aria-label="Mode">
+      <button class="out" id="tabOut" role="tab" aria-selected="true"><span class="num">01</span>Borrow</button>
+      <button class="in"  id="tabIn"  role="tab" aria-selected="false"><span class="num">02</span>Return</button>
+    </div>
+
+    <div class="frame" id="viewOut">
+      <i class="bl"></i><i class="br"></i>
+      <div class="head"><h2>Request gear</h2><div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+
+      <div class="field" id="f-id">
+        <label class="lab" for="studentId"><span class="tag">[ID]</span> Student ID <span class="req">required</span></label>
+        <input id="studentId" autocomplete="off" placeholder="e.g. 65010234" />
+        <div class="err">Enter the student ID on the loan.</div>
+      </div>
+      <div class="frow">
+        <div class="field" id="f-name">
+          <label class="lab" for="studentName"><span class="tag">[NAME]</span> Full name <span class="req">required</span></label>
+          <input id="studentName" autocomplete="off" placeholder="e.g. Somchai R." />
+          <div class="err">Enter the borrower's name.</div>
+        </div>
+        <div class="field" id="f-class">
+          <label class="lab" for="studentClass"><span class="tag">[CLASS]</span> Class <span class="req">required</span></label>
+          <input id="studentClass" autocomplete="off" placeholder="e.g. M.6/2" />
+          <div class="err">Enter the class.</div>
+        </div>
+      </div>
+      <div class="field" id="f-purpose">
+        <label class="lab" for="purpose"><span class="tag">[USE]</span> Purpose of borrow <span class="req">required</span></label>
+        <input id="purpose" autocomplete="off" placeholder="e.g. Short film for Media Studies" />
+        <div class="err">Tell us what the gear is for.</div>
+      </div>
+      <div class="field" id="f-items">
+        <label class="lab"><span class="tag">[KIT]</span> Equipment <span class="req">pick at least one</span></label>
+        <div id="catalog"></div>
+        <div class="err" style="margin-top:10px">Select the gear you want to borrow.</div>
+        <div class="sum" id="sum"></div>
+      </div>
+      <div class="field" id="f-return">
+        <label class="lab" for="returnDate"><span class="tag">[DUE]</span> Return date <span class="req">required</span></label>
+        <input id="returnDate" type="date" />
+        <div class="err">Choose the date you'll return the gear.</div>
+      </div>
+      <div class="field" id="f-detail">
+        <label class="lab" for="detail"><span class="tag">[NOTE]</span> Borrowing detail <span class="req">required</span></label>
+        <textarea id="detail" rows="3" placeholder="Specific models, accessories, condition notes…"></textarea>
+        <div class="err">Add any details for this loan.</div>
+      </div>
+
+      <button class="cta" id="checkoutBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        Submit borrow request
+      </button>
+    </div>
+
+    <div class="frame" id="viewIn" hidden>
+      <i class="bl"></i><i class="br"></i>
+      <div class="head"><h2>Your gear</h2><div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="search" autocomplete="off" placeholder="Find by student ID or equipment…" />
+      </div>
+      <div id="loanList"></div>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN SCREEN ================= -->
+  <div id="adminScreen" hidden>
+    <div class="admin-top">
+      <div class="at-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+      <div><h2>Admin console</h2><p id="adminWho">Teacher access</p></div>
+      <button class="logout" id="logoutBtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
+    </div>
+
+    <div class="modes" role="tablist" aria-label="Admin section">
+      <button id="tabReq" role="tab" aria-selected="true"><span class="num">A1</span>Requests</button>
+      <button id="tabCat" role="tab" aria-selected="false"><span class="num">A2</span>Catalog</button>
+      <button id="tabHist" role="tab" aria-selected="false"><span class="num">A3</span>History</button>
+      <button id="tabAcct" role="tab" aria-selected="false"><span class="num">A4</span>Accounts</button>
+      <button id="tabBackup" role="tab" aria-selected="false"><span class="num">A5</span>Backup</button>
+    </div>
+
+    <div class="frame" id="viewReq">
+      <i class="bl"></i><i class="br"></i>
+      <div class="head"><h2>Requests</h2><div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div id="reqList"></div>
+    </div>
+
+    <div class="frame" id="viewCat" hidden>
+      <i class="bl"></i><i class="br"></i>
+      <div class="head"><h2>Equipment catalog</h2><div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+
+      <div class="add-form">
+        <div class="formrow">
+          <div class="field" id="a-name">
+            <label class="lab" for="pName"><span class="tag">[NAME]</span> Product</label>
+            <input id="pName" autocomplete="off" placeholder="e.g. Drone" />
+            <div class="err">Name the product.</div>
+          </div>
+          <div class="field" id="a-cat">
+            <label class="lab" for="pCat"><span class="tag">[GROUP]</span> Category</label>
+            <input id="pCat" list="catlist" autocomplete="off" placeholder="e.g. Camera & Support" />
+            <datalist id="catlist"></datalist>
+            <div class="err">Pick or type a category.</div>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label class="lab" for="pTag"><span class="tag">[SPEC]</span> Label <span style="color:var(--faint)">optional</span></label>
+          <input id="pTag" autocomplete="off" placeholder="e.g. 4K / 30min flight" />
+        </div>
+        <label class="lab"><span class="tag">[ICON]</span> Icon</label>
+        <div class="iconpick" id="iconpick"></div>
+        <button class="addbtn" id="addBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Add to catalog
+        </button>
+      </div>
+
+      <div class="grouplabel">Current products</div>
+      <div id="catManage"></div>
+    </div>
+
+    <div class="frame" id="viewHist" hidden>
+      <i class="bl"></i><i class="br"></i>
+      <div class="head"><h2>Borrow history</h2><div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="histSearch" autocomplete="off" placeholder="Find by student ID or equipment…" />
+      </div>
+      <div class="filters" id="histFilters">
+        <button data-f="all" aria-pressed="true">All</button>
+        <button data-f="out" aria-pressed="false">On loan</button>
+        <button data-f="return_pending" aria-pressed="false">Returning</button>
+        <button data-f="in" aria-pressed="false">Returned</button>
+        <button data-f="declined" aria-pressed="false">Declined</button>
+        <button data-f="pending" aria-pressed="false">Pending</button>
+      </div>
+      <div id="histList"></div>
+    </div>
+
+    <div class="frame" id="viewAcct" hidden>
+      <i class="bl"></i><i class="br"></i>
+      <div class="head"><h2>Admin accounts</h2><div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+
+      <div class="add-form">
+        <div class="formrow">
+          <div class="field" id="a-user">
+            <label class="lab" for="newUser"><span class="tag">[USER]</span> Username</label>
+            <input id="newUser" autocomplete="off" placeholder="e.g. mr.santos" />
+            <div class="err">Enter a username.</div>
+          </div>
+          <div class="field" id="a-pass">
+            <label class="lab" for="newPass"><span class="tag">[PASS]</span> Password</label>
+            <input id="newPass" type="text" autocomplete="off" placeholder="Set a password" />
+            <div class="err">Enter a password.</div>
+          </div>
+        </div>
+        <button class="addbtn" id="addAcctBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Add account
+        </button>
+      </div>
+
+      <div class="grouplabel">Current accounts</div>
+      <div id="acctManage"></div>
+    </div>
+
+    <div class="frame" id="viewBackup" hidden>
+      <i class="bl"></i><i class="br"></i>
+      <div class="head"><h2>Backup &amp; restore</h2><div class="meter" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <p class="note">Your equipment catalog, borrow history, and admin accounts are saved in this browser — not inside the file. If you move or re-host the file, it opens empty. Download a backup here, then import it on the other device to carry everything over.</p>
+      <button class="addbtn" id="exportBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 21h14"/></svg>
+        Download backup (.json)
+      </button>
+      <div style="height:18px"></div>
+      <label class="lab"><span class="tag">[RESTORE]</span> Import a backup file</label>
+      <input type="file" id="importFile" accept="application/json,.json" />
+      <p class="note small">Importing replaces the current catalog, history, and accounts with the backup's contents.</p>
+    </div>
+  </div>
+
+  <div class="ledger">
+    <span>PENDING <b id="lPend">0</b></span>
+    <span>ON LOAN <b id="lOut">0</b></span>
+    <span>RETURNING <b id="lRet">0</b></span>
+    <span>RETURNED <b id="lIn">0</b></span>
+    <span>TOTAL <b id="lTotal">0</b></span>
+  </div>
+</div>
+
+<!-- login modal -->
+<div class="modal-back" id="loginModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Admin login">
+    <button class="x" id="loginClose" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="lock"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+    <h3>Teacher sign-in</h3>
+    <p>Sign in with your teacher account to review requests and manage equipment.</p>
+    <input id="adminUser" autocomplete="off" placeholder="Username" />
+    <input id="adminPass" type="password" autocomplete="off" placeholder="Password" style="margin-top:8px" />
+    <div class="merr" id="loginErr"></div>
+    <div class="mbtns"><button class="enter" id="loginEnter">Sign in</button></div>
+  </div>
+</div>
+
+<!-- return remark modal -->
+<div class="modal-back" id="returnModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Confirm return">
+    <button class="x" id="returnClose" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="lock okl"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+    <h3>Confirm return</h3>
+    <p>Check the gear back in and leave a remark on its condition (optional).</p>
+    <div class="forwhom" id="returnFor"></div>
+    <textarea id="returnRemark" rows="3" placeholder="e.g. All items returned in good condition. Lens cap missing."></textarea>
+    <div class="mbtns"><button class="cancel" id="returnCancel">Cancel</button><button class="enter okbtn" id="returnConfirm">Confirm return</button></div>
+  </div>
+</div>
+
+<div class="toast out" id="toast"><span class="tico" id="toastIco"></span><span id="toastTxt"></span></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     ADMIN PASSWORD — change this string to set the teacher login.
+     ========================================================= */
+  var ADMIN_PASSWORD = "Bcccomart1852";
+
+  /* ---------- icon set ---------- */
+  var ICONS = {
+    camera:'<path d="M3 7h13l2-3h3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><circle cx="11" cy="13" r="3.2"/>',
+    lens:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/>',
+    tripod:'<path d="M12 4v9M12 13l-6 7M12 13l6 7M9 17h6"/><circle cx="12" cy="4" r="1.6"/>',
+    gimbal:'<path d="M12 3v4M9 7h6M7 7v6a5 5 0 0 0 10 0V7"/><circle cx="12" cy="19" r="2"/>',
+    light:'<rect x="5" y="4" width="14" height="9" rx="1.5"/><path d="M12 13v4M8 21h8M9 8h6"/>',
+    stand:'<path d="M12 3v11M12 14l-5 7M12 14l5 7M6 9l6-3 6 3"/>',
+    mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/>',
+    lav:'<circle cx="8" cy="8" r="3.4"/><path d="M10.5 10.5L20 20M16 20h4v-4"/>',
+    recorder:'<rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="9" r="2.6"/><path d="M9 15h6M9 18h6"/>',
+    headphones:'<path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/>',
+    sd:'<path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M10 3v3M13 3v3M16 5v2"/>',
+    battery:'<rect x="3" y="8" width="16" height="9" rx="1.6"/><path d="M19 11h2v3h-2M7 11v3M11 11v3"/>',
+    monitor:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>',
+    cable:'<path d="M5 7a4 4 0 0 1 8 0v9a3 3 0 0 0 6 0M5 5v4M3 7h4M19 13v4M17 15h4"/>',
+    box:'<path d="M3 8l9-5 9 5v8l-9 5-9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+    user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'
+  };
+  var ICON_CHOICES = ['camera','lens','tripod','gimbal','light','stand','mic','lav','recorder','headphones','sd','battery','monitor','cable','box'];
+
+  var DEFAULT_CATALOG = [
+    {cat:'Camera & Support', items:[
+      {id:'cam',  name:'Camera Body', tag:'DSLR / Mirrorless', ico:'camera'},
+      {id:'lens', name:'Lens',        tag:'Prime / Zoom',      ico:'lens'},
+      {id:'trip', name:'Tripod',      tag:'Fluid head',         ico:'tripod'},
+      {id:'gimb', name:'Gimbal',      tag:'3-axis stabiliser',  ico:'gimbal'}
+    ]},
+    {cat:'Lighting', items:[
+      {id:'led',  name:'LED Panel',   tag:'Bi-colour',  ico:'light'},
+      {id:'lstd', name:'Light Stand', tag:'C-stand',    ico:'stand'}
+    ]},
+    {cat:'Audio', items:[
+      {id:'shot', name:'Shotgun Mic',   tag:'Boom',        ico:'mic'},
+      {id:'lavm', name:'Lavalier Mic',  tag:'Wireless',    ico:'lav'},
+      {id:'rec',  name:'Audio Recorder',tag:'Field',       ico:'recorder'},
+      {id:'hp',   name:'Headphones',    tag:'Monitoring',  ico:'headphones'}
+    ]},
+    {cat:'Media & Power', items:[
+      {id:'sd',   name:'SD Card',  tag:'128GB',     ico:'sd'},
+      {id:'batt', name:'Battery',  tag:'Spare pack',ico:'battery'}
+    ]}
+  ];
+
+  function svg(p){return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';}
+  function svgsm(p){return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';}
+  var $=function(s,r){return (r||document).querySelector(s);};
+  function escapeHtml(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function clone(v){return JSON.parse(JSON.stringify(v));}
+
+  /* ---------- storage: window.storage (Claude) -> localStorage (host) -> memory ---------- */
+  var LKEY='gear-cage-loans', CKEY='gear-cage-catalog', AKEY='gear-cage-admins';
+  var hasWin=(typeof window!=='undefined'&&window.storage&&typeof window.storage.get==='function');
+  var hasLS=(function(){try{var k='__gc_test';window.localStorage.setItem(k,'1');window.localStorage.removeItem(k);return true;}catch(e){return false;}})();
+  var memL=[], memC=null;
+  async function sget(k){
+    if(hasWin){try{var r=await window.storage.get(k);return r&&r.value?JSON.parse(r.value):null;}catch(e){}}
+    if(hasLS){try{var v=window.localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){}}
+    return k===LKEY?memL.slice():(memC?clone(memC):null);
+  }
+  async function sset(k,v){
+    if(k===LKEY)memL=clone(v);else memC=clone(v);
+    if(hasWin){try{await window.storage.set(k,JSON.stringify(v),false);return;}catch(e){}}
+    if(hasLS){try{window.localStorage.setItem(k,JSON.stringify(v));return;}catch(e){}}
+  }
+
+  /* ---------- state ---------- */
+  var cart={}, loans=[], catalog=[], NAME={}, pickIco='box', authed=false;
+  var admins=[], currentUser=null;
+  var DEFAULT_ADMIN_USER="admin"; /* seeded with the password set in ADMIN_PASSWORD above */
+  function rebuildNames(){ NAME={}; catalog.forEach(function(g){g.items.forEach(function(it){NAME[it.id]=it.name;});}); }
+
+  /* ---------- toast (feedback for every submit / confirm) ---------- */
+  var toastT;
+  var ICO_OK=svgsm('<path d="M20 6L9 17l-5-5"/>'), ICO_NO=svgsm('<path d="M6 6l12 12M18 6L6 18"/>');
+  function toast(kind,msg){
+    var t=$('#toast'); t.className='toast show '+kind;
+    $('#toastIco').innerHTML = (kind==='no') ? ICO_NO : ICO_OK;
+    $('#toastTxt').textContent=msg;
+    clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},3600);
+  }
+
+  /* ---------- student: catalog picker ---------- */
+  var sum=$('#sum');
+  function rebuildPicker(){
+    var html='';
+    catalog.forEach(function(g){
+      if(!g.items.length) return;
+      html+='<div class="cat-label">'+escapeHtml(g.cat)+'</div><div class="grid">';
+      g.items.forEach(function(it){
+        html+='<div class="item" data-id="'+it.id+'" data-on="'+(cart[it.id]?'1':'0')+'" role="button" tabindex="0">'+
+          '<span class="ico">'+svg(ICONS[it.ico]||ICONS.box)+'</span>'+
+          '<span class="nm">'+escapeHtml(it.name)+'<small>'+escapeHtml(it.tag||'')+'</small></span>'+
+          '<span class="qty"'+(cart[it.id]?'':' hidden')+'>'+
+            '<button class="dec" aria-label="Remove one">–</button>'+
+            '<span class="n">'+(cart[it.id]||1)+'</span>'+
+            '<button class="inc" aria-label="Add one">+</button>'+
+          '</span></div>';
+      });
+      html+='</div>';
+    });
+    $('#catalog').innerHTML=html; renderSummary();
+  }
+  function setItem(el,qty){
+    var id=el.dataset.id, q=$('.qty',el);
+    if(qty<=0){ delete cart[id]; el.dataset.on='0'; q.hidden=true; }
+    else{ cart[id]=qty; el.dataset.on='1'; q.hidden=false; $('.n',el).textContent=qty; }
+    renderSummary();
+    if(Object.keys(cart).length) $('#f-items').classList.remove('bad');
+  }
+  function renderSummary(){ sum.innerHTML=Object.keys(cart).map(function(id){return '<span class="chip">'+escapeHtml(NAME[id]||'?')+' ×'+cart[id]+'</span>';}).join(''); }
+  $('#catalog').addEventListener('click',function(e){
+    var inc=e.target.closest('.inc'), dec=e.target.closest('.dec'), el=e.target.closest('.item'); if(!el) return;
+    var id=el.dataset.id, cur=cart[id]||0;
+    if(inc){e.stopPropagation();setItem(el,cur+1);return;}
+    if(dec){e.stopPropagation();setItem(el,cur-1);return;}
+    setItem(el,cur>0?0:1);
+  });
+  $('#catalog').addEventListener('keydown',function(e){
+    if((e.key===' '||e.key==='Enter')&&e.target.classList.contains('item')){e.preventDefault();var el=e.target;setItem(el,(cart[el.dataset.id]||0)>0?0:1);}
+  });
+
+  /* ---------- submit borrow request ---------- */
+  function mark(sel,bad){$(sel).classList.toggle('bad',bad);}
+  $('#checkoutBtn').addEventListener('click',async function(){
+    var id=$('#studentId').value.trim(), name=$('#studentName').value.trim(), cls=$('#studentClass').value.trim(),
+        purpose=$('#purpose').value.trim(), detail=$('#detail').value.trim(), rdate=$('#returnDate').value;
+    var items=Object.keys(cart), ok=true;
+    mark('#f-id',!id); if(!id)ok=false;
+    mark('#f-name',!name); if(!name)ok=false;
+    mark('#f-class',!cls); if(!cls)ok=false;
+    mark('#f-purpose',!purpose); if(!purpose)ok=false;
+    mark('#f-items',!items.length); if(!items.length)ok=false;
+    mark('#f-return',!rdate); if(!rdate)ok=false;
+    mark('#f-detail',!detail); if(!detail)ok=false;
+    if(!ok){ var b=$('.field.bad input,.field.bad textarea'); if(b)b.focus(); toast('no','Fill in the highlighted fields to send your request'); return; }
+
+    loans.unshift({
+      ref:'LN'+Date.now().toString(36).toUpperCase().slice(-6),
+      studentId:id, name:name, cls:cls, purpose:purpose, detail:detail, returnDate:rdate,
+      items:items.map(function(k){return {id:k,name:NAME[k],qty:cart[k]};}),
+      status:'pending', requestedAt:Date.now(), decidedAt:null, returnRequestedAt:null, returnedAt:null, returnRemark:null
+    });
+    await sset(LKEY,loans);
+    toast('out','Request sent for '+name+' ('+id+') — waiting for teacher approval');
+    cart={}; $('#studentId').value=''; $('#studentName').value=''; $('#studentClass').value=''; $('#purpose').value=''; $('#detail').value=''; $('#returnDate').value='';
+    rebuildPicker(); refreshAll();
+  });
+  ['#studentId','#studentName','#studentClass','#purpose','#detail','#returnDate'].forEach(function(s){ $(s).addEventListener('input',function(){if(this.value.trim())this.closest('.field').classList.remove('bad');}); });
+
+  /* ---------- student: your gear ---------- */
+  function timeAgo(ts){if(!ts)return'';var s=Math.floor((Date.now()-ts)/1000);if(s<60)return'just now';var m=Math.floor(s/60);if(m<60)return m+' min ago';var h=Math.floor(m/60);if(h<24)return h+' hr ago';var d=Math.floor(h/24);return d+' day'+(d>1?'s':'')+' ago';}
+  function todayISO(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  function fmtDate(iso){ if(!iso)return''; var p=iso.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString(undefined,{weekday:'short',day:'2-digit',month:'short',year:'numeric'}); }
+  function whoLine(l){
+    var parts=[]; if(l.name)parts.push(escapeHtml(l.name)); if(l.cls)parts.push(escapeHtml(l.cls));
+    return parts.length?'<div class="who">'+parts.join(' · ')+'</div>':'';
+  }
+  function dueLine(l){
+    if(!l.returnDate) return '';
+    var overdue=(l.status==='out'||l.status==='return_pending')&&l.returnDate<todayISO();
+    return '<div class="due'+(overdue?' over':'')+'">'+svgsm('<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>')+(overdue?'Overdue · was due ':'Due ')+fmtDate(l.returnDate)+'</div>';
+  }
+  function loanCard(l){
+    var chips=l.items.map(function(it){return '<span class="chip">'+escapeHtml(it.name)+' <b>×'+it.qty+'</b></span>';}).join('');
+    var conf={
+      pending:{pill:'pend',label:'Awaiting approval',when:'requested '+timeAgo(l.requestedAt),btn:''},
+      out:{pill:'on',label:'On loan',when:'out '+timeAgo(l.decidedAt||l.requestedAt),btn:'<button class="checkin">Request return</button>'},
+      return_pending:{pill:'ret',label:'Return pending',when:'return requested '+timeAgo(l.returnRequestedAt),btn:''}
+    }[l.status];
+    return '<div class="loan" data-ref="'+l.ref+'">'+
+      '<div class="top"><div><div class="id">'+escapeHtml(l.studentId)+'</div>'+whoLine(l)+
+        '<div class="when">'+l.ref+' · '+conf.when+'</div></div>'+
+        '<span class="pill '+conf.pill+'"><span class="dot"></span>'+conf.label+'</span></div>'+
+      '<p class="purpose">'+escapeHtml(l.purpose)+'</p>'+
+      dueLine(l)+
+      '<p class="detail">'+escapeHtml(l.detail)+'</p>'+
+      '<div class="items">'+chips+'</div>'+conf.btn+'</div>';
+  }
+  var loanList=$('#loanList');
+  function renderLoans(){
+    var q=$('#search').value.trim().toLowerCase();
+    function match(l){var n=(l.name||'').toLowerCase(),c=(l.cls||'').toLowerCase();return !q||l.studentId.toLowerCase().indexOf(q)>-1||n.indexOf(q)>-1||c.indexOf(q)>-1||l.items.some(function(it){return it.name.toLowerCase().indexOf(q)>-1;});}
+    var pending=loans.filter(function(l){return l.status==='pending'&&match(l);});
+    var out=loans.filter(function(l){return l.status==='out'&&match(l);});
+    var ret=loans.filter(function(l){return l.status==='return_pending'&&match(l);});
+    var html='';
+    if(pending.length) html+='<div class="grouplabel">Awaiting approval</div>'+pending.map(loanCard).join('');
+    if(out.length) html+=(html?'<div class="gap"></div>':'')+'<div class="grouplabel">On loan — ready to return</div>'+out.map(loanCard).join('');
+    if(ret.length) html+=(html?'<div class="gap"></div>':'')+'<div class="grouplabel">Return requested — awaiting confirmation</div>'+ret.map(loanCard).join('');
+    if(!html){
+      var any=loans.some(function(l){return l.status==='pending'||l.status==='out'||l.status==='return_pending';});
+      var msg=any?{h:'No matches',p:'Nothing matches that search. Clear it to see your gear.'}:{h:'Nothing borrowed yet',p:'Submit a request from the Borrow tab. Once a teacher approves it, your gear shows up here to return.'};
+      html='<div class="empty"><div class="eico">'+svg('<rect x="3" y="7" width="13" height="13" rx="2"/><path d="M16 7l2-3h3v13a2 2 0 0 1-2 2"/>')+'</div><h3>'+msg.h+'</h3><p>'+msg.p+'</p></div>';
+    }
+    loanList.innerHTML=html;
+  }
+  loanList.addEventListener('click',async function(e){
+    if(!e.target.classList.contains('checkin'))return;
+    var ref=e.target.closest('.loan').dataset.ref, l=loans.find(function(x){return x.ref===ref;}); if(!l)return;
+    l.status='return_pending'; l.returnRequestedAt=Date.now(); await sset(LKEY,loans);
+    toast('in','Return requested for '+l.studentId+' — waiting for teacher to confirm');
+    renderLoans(); refreshAll();
+  });
+  $('#search').addEventListener('input',renderLoans);
+
+  /* ---------- admin: requests (borrow + return) ---------- */
+  var reqList=$('#reqList');
+  function reqCard(l,kind){
+    var chips=l.items.map(function(it){return '<span class="chip">'+escapeHtml(it.name)+' <b>×'+it.qty+'</b></span>';}).join('');
+    var pill, when, acts;
+    if(kind==='borrow'){
+      pill='<span class="pill pend"><span class="dot"></span>Borrow</span>';
+      when='requested '+timeAgo(l.requestedAt);
+      acts='<div class="acts"><button class="approve">Approve</button><button class="decline">Decline</button></div>';
+    }else{
+      pill='<span class="pill ret"><span class="dot"></span>Return</span>';
+      when='return requested '+timeAgo(l.returnRequestedAt);
+      acts='<div class="acts"><button class="approve confirm-ret">Confirm return</button><button class="decline reject-ret">Reject</button></div>';
+    }
+    return '<div class="loan req" data-ref="'+l.ref+'">'+
+      '<div class="top"><div><div class="id">'+escapeHtml(l.studentId)+'</div>'+whoLine(l)+
+        '<div class="when">'+l.ref+' · '+when+'</div></div>'+pill+'</div>'+
+      '<p class="purpose">'+escapeHtml(l.purpose)+'</p>'+
+      dueLine(l)+
+      '<p class="detail">'+escapeHtml(l.detail)+'</p>'+
+      '<div class="items">'+chips+'</div>'+acts+'</div>';
+  }
+  function renderRequests(){
+    var borrow=loans.filter(function(l){return l.status==='pending';});
+    var ret=loans.filter(function(l){return l.status==='return_pending';});
+    var html='';
+    if(borrow.length) html+='<div class="grouplabel">Borrow requests</div>'+borrow.map(function(l){return reqCard(l,'borrow');}).join('');
+    if(ret.length) html+=(html?'<div class="gap"></div>':'')+'<div class="grouplabel">Return requests</div>'+ret.map(function(l){return reqCard(l,'return');}).join('');
+    if(!html) html='<div class="empty"><div class="eico">'+svg('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>')+'</div><h3>Queue is clear</h3><p>No requests waiting. Borrow and return requests from students appear here for you to approve or confirm.</p></div>';
+    reqList.innerHTML=html;
+  }
+  reqList.addEventListener('click',async function(e){
+    var t=e.target; if(!t.closest('.loan'))return;
+    var ref=t.closest('.loan').dataset.ref, l=loans.find(function(x){return x.ref===ref;}); if(!l)return;
+    var n=l.items.length, tail=l.studentId+' · '+n+' item'+(n>1?'s':'');
+    if(t.classList.contains('confirm-ret')){ openReturnModal(l); return; }
+    else if(t.classList.contains('reject-ret')){ l.status='out'; l.returnRequestedAt=null; toast('no','Return rejected — '+l.studentId+' still on loan'); }
+    else if(t.classList.contains('approve')){ l.status='out'; l.decidedAt=Date.now(); toast('ok','Approved — '+tail+' now on loan'); }
+    else if(t.classList.contains('decline')){ l.status='declined'; l.decidedAt=Date.now(); toast('no','Declined — '+tail); }
+    else return;
+    await sset(LKEY,loans); renderRequests(); refreshAll();
+  });
+
+  /* ---------- return remark modal ---------- */
+  var pendingReturnRef=null, returnModal=$('#returnModal');
+  function openReturnModal(l){
+    pendingReturnRef=l.ref;
+    var items=l.items.map(function(it){return it.name+' ×'+it.qty;}).join(', ');
+    $('#returnFor').textContent=l.studentId+' · '+items;
+    $('#returnRemark').value=''; returnModal.hidden=false;
+    setTimeout(function(){$('#returnRemark').focus();},50);
+  }
+  function closeReturnModal(){ returnModal.hidden=true; pendingReturnRef=null; }
+  $('#returnConfirm').addEventListener('click',async function(){
+    var l=loans.find(function(x){return x.ref===pendingReturnRef;}); if(!l){closeReturnModal();return;}
+    l.status='in'; l.returnedAt=Date.now(); l.returnRemark=$('#returnRemark').value.trim();
+    await sset(LKEY,loans);
+    var n=l.items.length; closeReturnModal();
+    toast('ok','Return confirmed — '+l.studentId+' · '+n+' item'+(n>1?'s':''));
+    renderRequests(); refreshAll();
+  });
+  $('#returnCancel').addEventListener('click',closeReturnModal);
+  $('#returnClose').addEventListener('click',closeReturnModal);
+  returnModal.addEventListener('click',function(e){ if(e.target===returnModal) closeReturnModal(); });
+
+  /* ---------- admin: borrow history ---------- */
+  var histList=$('#histList'), histFilter='all';
+  var ST={pending:{c:'pend',t:'Pending'},out:{c:'on',t:'On loan'},return_pending:{c:'ret',t:'Returning'},'in':{c:'done',t:'Returned'},declined:{c:'dec',t:'Declined'}};
+  function fmtStamp(ts){ if(!ts)return''; var d=new Date(ts); return d.toLocaleDateString(undefined,{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+  function recencyTs(l){ return l.returnedAt||l.returnRequestedAt||l.decidedAt||l.requestedAt||0; }
+  function histCard(l){
+    var chips=l.items.map(function(it){return '<span class="chip">'+escapeHtml(it.name)+' <b>×'+it.qty+'</b></span>';}).join('');
+    var s=ST[l.status]||{c:'',t:l.status};
+    var stamps='<span><b>Requested</b> '+fmtStamp(l.requestedAt)+'</span>';
+    if(l.status==='declined'){ stamps+='<span><b>Declined</b> '+fmtStamp(l.decidedAt)+'</span>'; }
+    else{
+      if(l.decidedAt) stamps+='<span><b>Approved</b> '+fmtStamp(l.decidedAt)+'</span>';
+      if(l.returnRequestedAt&&l.status!=='in') stamps+='<span><b>Return req.</b> '+fmtStamp(l.returnRequestedAt)+'</span>';
+      if(l.returnedAt) stamps+='<span><b>Returned</b> '+fmtStamp(l.returnedAt)+'</span>';
+    }
+    var remark=(l.status==='in'&&l.returnRemark)?'<div class="remark"><span class="rlabel">Teacher remark</span>'+escapeHtml(l.returnRemark)+'</div>':'';
+    return '<div class="loan" data-ref="'+l.ref+'">'+
+      '<div class="top"><div><div class="id">'+escapeHtml(l.studentId)+'</div>'+whoLine(l)+
+        '<div class="when">'+l.ref+'</div></div>'+
+        '<span class="pill '+s.c+'"><span class="dot"></span>'+s.t+'</span></div>'+
+      '<p class="purpose">'+escapeHtml(l.purpose)+'</p>'+
+      dueLine(l)+
+      '<p class="detail">'+escapeHtml(l.detail)+'</p>'+
+      '<div class="items">'+chips+'</div>'+remark+
+      '<div class="stamps">'+stamps+'</div></div>';
+  }
+  function renderHistory(){
+    var q=$('#histSearch').value.trim().toLowerCase();
+    function match(l){var n=(l.name||'').toLowerCase(),c=(l.cls||'').toLowerCase();return !q||l.studentId.toLowerCase().indexOf(q)>-1||n.indexOf(q)>-1||c.indexOf(q)>-1||l.items.some(function(it){return it.name.toLowerCase().indexOf(q)>-1;});}
+    var list=loans.filter(function(l){return match(l)&&(histFilter==='all'||l.status===histFilter);});
+    list.sort(function(a,b){return recencyTs(b)-recencyTs(a);});
+    if(!list.length){
+      histList.innerHTML='<div class="empty"><div class="eico">'+svg('<path d="M3 3v6h6M3 9a9 9 0 1 0 2.6-6.4L3 5"/><path d="M12 8v4l3 2"/>')+'</div><h3>No records</h3><p>'+(loans.length?'Nothing matches that search or filter.':'Borrow activity will be logged here once students start requesting gear.')+'</p></div>';
+      return;
+    }
+    histList.innerHTML=list.map(histCard).join('');
+  }
+  $('#histSearch').addEventListener('input',renderHistory);
+  $('#histFilters').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-f]'); if(!b)return;
+    histFilter=b.dataset.f;
+    Array.prototype.forEach.call($('#histFilters').children,function(x){x.setAttribute('aria-pressed', x===b);});
+    renderHistory();
+  });
+
+  /* ---------- admin: catalog manager ---------- */
+  function renderIconPicker(){
+    $('#iconpick').innerHTML=ICON_CHOICES.map(function(k){return '<button type="button" data-ico="'+k+'" aria-pressed="'+(k===pickIco)+'" title="'+k+'">'+svg(ICONS[k])+'</button>';}).join('');
+  }
+  $('#iconpick').addEventListener('click',function(e){var b=e.target.closest('button[data-ico]'); if(!b)return; pickIco=b.dataset.ico; renderIconPicker();});
+  function refreshCatList(){ $('#catlist').innerHTML=catalog.map(function(g){return '<option value="'+escapeHtml(g.cat)+'">';}).join(''); }
+  var catManage=$('#catManage');
+  function renderCatManage(){
+    var html='';
+    catalog.forEach(function(g){ g.items.forEach(function(it){
+      html+='<div class="mrow" data-id="'+it.id+'">'+
+        '<span class="ico">'+svg(ICONS[it.ico]||ICONS.box)+'</span>'+
+        '<span class="mname">'+escapeHtml(it.name)+'<small>'+escapeHtml((it.tag?it.tag+' · ':'')+g.cat)+'</small></span>'+
+        '<div class="mact"><button class="rm" aria-label="Remove">'+svg('<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>')+'</button></div></div>';
+    });});
+    if(!html) html='<div class="empty"><div class="eico">'+svg(ICONS.box)+'</div><h3>No products</h3><p>Add equipment with the form above so students can borrow it.</p></div>';
+    catManage.innerHTML=html;
+  }
+  catManage.addEventListener('click',async function(e){
+    var row=e.target.closest('.mrow'); if(!row)return; var id=row.dataset.id;
+    if(e.target.closest('.rm')){ row.querySelector('.mact').innerHTML='<span class="cf">Remove?</span><button class="mini yes">Yes</button><button class="mini no">No</button>'; return; }
+    if(e.target.classList.contains('no')){ renderCatManage(); return; }
+    if(e.target.classList.contains('yes')){
+      catalog.forEach(function(g){ g.items=g.items.filter(function(it){return it.id!==id;}); });
+      catalog=catalog.filter(function(g){return g.items.length;});
+      await sset(CKEY,catalog); rebuildNames(); rebuildPicker(); renderCatManage(); refreshCatList();
+      toast('adm','Product removed from catalog');
+    }
+  });
+  $('#addBtn').addEventListener('click',async function(){
+    var name=$('#pName').value.trim(), cat=$('#pCat').value.trim(), tag=$('#pTag').value.trim();
+    var ok=true; mark('#a-name',!name); if(!name)ok=false; mark('#a-cat',!cat); if(!cat)ok=false;
+    if(!ok){ toast('no','Enter a product name and category'); return; }
+    var item={id:'p'+Date.now().toString(36),name:name,tag:tag,ico:pickIco};
+    var g=catalog.find(function(x){return x.cat.toLowerCase()===cat.toLowerCase();});
+    if(g) g.items.push(item); else catalog.push({cat:cat,items:[item]});
+    await sset(CKEY,catalog); rebuildNames(); rebuildPicker(); renderCatManage(); refreshCatList();
+    $('#pName').value=''; $('#pTag').value=''; pickIco='box'; renderIconPicker();
+    toast('adm','Added “'+name+'” to '+cat);
+  });
+  ['#pName','#pCat'].forEach(function(s){$(s).addEventListener('input',function(){if(this.value.trim())this.closest('.field').classList.remove('bad');});});
+
+  /* ---------- admin: account manager ---------- */
+  var acctManage=$('#acctManage');
+  var EYE='<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>';
+  var KEY='<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l2 2M14 9l2 2"/>';
+  var TRASH='<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>';
+  function mask(p){return '\u2022'.repeat(Math.max(6,p.length));}
+  function renderAcctManage(){
+    acctManage.innerHTML=admins.map(function(a){
+      var you=(a.u===currentUser);
+      return '<div class="mrow" data-u="'+escapeHtml(a.u)+'">'+
+        '<span class="ico">'+svg(ICONS.user)+'</span>'+
+        '<span class="mname">'+escapeHtml(a.u)+(you?'<span class="youtag">you</span>':'')+
+          '<small><span class="pw" data-shown="0">'+mask(a.p)+'</span></small></span>'+
+        '<div class="mact">'+
+          '<button class="rm reveal" title="Show / hide password">'+svg(EYE)+'</button>'+
+          '<button class="rm setpw" title="Change password">'+svg(KEY)+'</button>'+
+          '<button class="rm del" title="Remove account">'+svg(TRASH)+'</button>'+
+        '</div></div>';
+    }).join('');
+  }
+  acctManage.addEventListener('click',async function(e){
+    var row=e.target.closest('.mrow'); if(!row)return;
+    var u=row.dataset.u, a=admins.find(function(x){return x.u===u;}); if(!a)return;
+    if(e.target.closest('.reveal')){
+      var pw=row.querySelector('.pw');
+      if(pw.dataset.shown==='1'){ pw.textContent=mask(a.p); pw.dataset.shown='0'; }
+      else{ pw.textContent=a.p; pw.dataset.shown='1'; }
+      return;
+    }
+    if(e.target.closest('.setpw')){
+      row.querySelector('.mname').innerHTML='<input class="pwedit" type="text" value="'+escapeHtml(a.p)+'" />';
+      row.querySelector('.mact').innerHTML='<button class="mini savepw">Save</button><button class="mini no">Cancel</button>';
+      var inp=row.querySelector('.pwedit'); inp.focus(); inp.select();
+      return;
+    }
+    if(e.target.classList.contains('savepw')){
+      var np=row.querySelector('.pwedit').value;
+      if(!np){ toast('no','Password cannot be empty'); return; }
+      a.p=np; await sset(AKEY,admins); renderAcctManage(); toast('adm','Password updated for '+u);
+      return;
+    }
+    if(e.target.closest('.del')){
+      if(admins.length<=1){ toast('no','Keep at least one admin account'); return; }
+      if(u===currentUser){ toast('no','You can’t remove the account you’re signed in with'); return; }
+      row.querySelector('.mact').innerHTML='<span class="cf">Remove?</span><button class="mini yes">Yes</button><button class="mini no">No</button>';
+      return;
+    }
+    if(e.target.classList.contains('yes')){
+      admins=admins.filter(function(x){return x.u!==u;}); await sset(AKEY,admins); renderAcctManage(); toast('adm','Removed account '+u);
+      return;
+    }
+    if(e.target.classList.contains('no')){ renderAcctManage(); return; }
+  });
+  $('#addAcctBtn').addEventListener('click',async function(){
+    var u=$('#newUser').value.trim(), p=$('#newPass').value;
+    var ok=true; mark('#a-user',!u); if(!u)ok=false; mark('#a-pass',!p); if(!p)ok=false;
+    if(!ok){ toast('no','Enter a username and password'); return; }
+    if(admins.some(function(a){return a.u.toLowerCase()===u.toLowerCase();})){ toast('no','That username already exists'); return; }
+    admins.push({u:u,p:p}); await sset(AKEY,admins);
+    $('#newUser').value=''; $('#newPass').value=''; renderAcctManage();
+    toast('adm','Added account '+u);
+  });
+  ['#newUser','#newPass'].forEach(function(s){$(s).addEventListener('input',function(){if(this.value.trim())this.closest('.field').classList.remove('bad');});});
+
+  /* ---------- admin: backup & restore ---------- */
+  $('#exportBtn').addEventListener('click',function(){
+    var payload={ app:'BCC ComArts i-Borrow', version:1, exportedAt:Date.now(), catalog:catalog, loans:loans, admins:admins };
+    try{
+      var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url; a.download='bcc-iborrow-backup-'+todayISO()+'.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){URL.revokeObjectURL(url);},1500);
+      toast('adm','Backup downloaded');
+    }catch(err){ toast('no','Couldn’t create the backup file'); }
+  });
+  $('#importFile').addEventListener('change',function(e){
+    var f=e.target.files&&e.target.files[0]; if(!f)return;
+    var reader=new FileReader();
+    reader.onload=async function(){
+      try{
+        var data=JSON.parse(reader.result);
+        if(!data||(!data.catalog&&!data.loans&&!data.admins)) throw new Error('shape');
+        if(Array.isArray(data.catalog)) { catalog=data.catalog; await sset(CKEY,catalog); }
+        if(Array.isArray(data.loans))   { loans=data.loans;     await sset(LKEY,loans); }
+        if(Array.isArray(data.admins)&&data.admins.length){ admins=data.admins; await sset(AKEY,admins); }
+        rebuildNames(); rebuildPicker(); refreshCatList(); renderCatManage(); renderAcctManage(); refreshAll();
+        toast('ok','Backup imported — your data is restored');
+      }catch(err){ toast('no','That file isn’t a valid backup'); }
+      e.target.value='';
+    };
+    reader.readAsText(f);
+  });
+
+  /* ---------- screens & tabs ---------- */
+  function setStudentTab(which){
+    var isIn=which==='in';
+    $('#tabIn').setAttribute('aria-selected',isIn); $('#tabOut').setAttribute('aria-selected',!isIn);
+    $('#viewIn').hidden=!isIn; $('#viewOut').hidden=isIn;
+    document.body.classList.toggle('in-mode',isIn);
+    if(isIn) renderLoans();
+  }
+  $('#tabOut').addEventListener('click',function(){setStudentTab('out');});
+  $('#tabIn').addEventListener('click',function(){setStudentTab('in');});
+  function setAdminTab(which){
+    var map={req:'Req',cat:'Cat',hist:'Hist',acct:'Acct',backup:'Backup'};
+    Object.keys(map).forEach(function(k){
+      $('#tab'+map[k]).setAttribute('aria-selected', k===which);
+      $('#view'+map[k]).hidden = k!==which;
+    });
+    if(which==='cat'){ renderCatManage(); refreshCatList(); renderIconPicker(); }
+    else if(which==='hist') renderHistory();
+    else if(which==='acct') renderAcctManage();
+    else if(which==='req') renderRequests();
+  }
+  $('#tabReq').addEventListener('click',function(){setAdminTab('req');});
+  $('#tabCat').addEventListener('click',function(){setAdminTab('cat');});
+  $('#tabHist').addEventListener('click',function(){setAdminTab('hist');});
+  $('#tabAcct').addEventListener('click',function(){setAdminTab('acct');});
+  $('#tabBackup').addEventListener('click',function(){setAdminTab('backup');});
+  function showAdmin(){ $('#studentScreen').hidden=true; $('#adminScreen').hidden=false; document.body.classList.remove('in-mode'); setAdminTab('req'); }
+  function showStudent(){ $('#adminScreen').hidden=true; $('#studentScreen').hidden=false; setStudentTab('out'); }
+
+  /* ---------- login modal ---------- */
+  var modal=$('#loginModal');
+  function openLogin(){ modal.hidden=false; $('#loginErr').textContent=''; $('#adminUser').value=''; $('#adminPass').value=''; setTimeout(function(){$('#adminUser').focus();},50); }
+  function closeLogin(){ modal.hidden=true; }
+  function tryLogin(){
+    var u=$('#adminUser').value.trim(), p=$('#adminPass').value;
+    var acc=admins.find(function(a){return a.u.toLowerCase()===u.toLowerCase() && a.p===p;});
+    if(acc){ authed=true; currentUser=acc.u; $('#adminWho').textContent='Signed in as '+acc.u; closeLogin(); showAdmin(); toast('adm','Signed in as '+acc.u); }
+    else{ $('#loginErr').textContent='Wrong username or password. Try again.'; $('#adminPass').select(); }
+  }
+  $('#adminBtn').addEventListener('click',function(){ if(authed) showAdmin(); else openLogin(); });
+  $('#loginEnter').addEventListener('click',tryLogin);
+  $('#adminUser').addEventListener('keydown',function(e){ if(e.key==='Enter') $('#adminPass').focus(); });
+  $('#adminPass').addEventListener('keydown',function(e){ if(e.key==='Enter') tryLogin(); });
+  $('#loginClose').addEventListener('click',closeLogin);
+  modal.addEventListener('click',function(e){ if(e.target===modal) closeLogin(); });
+  $('#logoutBtn').addEventListener('click',function(){ authed=false; currentUser=null; showStudent(); toast('adm','Signed out'); });
+
+  /* ---------- status + ledger ---------- */
+  function refreshAll(){
+    var pend=loans.filter(function(l){return l.status==='pending';}).length;
+    var out=loans.filter(function(l){return l.status==='out';}).length;
+    var ret=loans.filter(function(l){return l.status==='return_pending';}).length;
+    var inn=loans.filter(function(l){return l.status==='in';}).length;
+    var action=pend+ret;
+    $('#lPend').textContent=pend; $('#lOut').textContent=out; $('#lRet').textContent=ret; $('#lIn').textContent=inn; $('#lTotal').textContent=loans.length;
+    var st=$('#status'), tx=$('#statusTxt'); st.className='status';
+    if(action>0){ st.classList.add('pend'); tx.textContent=action+' to review'; }
+    else if(out>0){ st.classList.add('live'); tx.textContent=out+' out'; }
+    else tx.textContent='All clear';
+    var badge=$('#adminBadge'); if(action>0){ badge.hidden=false; badge.textContent=action>99?'99+':action; } else badge.hidden=true;
+    if(!$('#adminScreen').hidden){ if(!$('#viewReq').hidden) renderRequests(); else if(!$('#viewHist').hidden) renderHistory(); }
+  }
+
+  /* ---------- clock ---------- */
+  function tick(){var d=new Date();$('#time').textContent=d.toLocaleTimeString(undefined,{hour12:false});$('#date').textContent=d.toLocaleDateString(undefined,{weekday:'short',day:'2-digit',month:'short'});}
+  tick(); setInterval(tick,1000);
+
+  /* ---------- init ---------- */
+  (async function init(){
+    var c=await sget(CKEY);
+    if(!c||!c.length){ catalog=clone(DEFAULT_CATALOG); await sset(CKEY,catalog); } else catalog=c;
+    loans=(await sget(LKEY))||[];
+    admins=(await sget(AKEY))||[];
+    if(!admins.length){ admins=[{u:DEFAULT_ADMIN_USER,p:ADMIN_PASSWORD}]; await sset(AKEY,admins); }
+    var rd=$('#returnDate'); if(rd) rd.min=todayISO();
+    rebuildNames(); rebuildPicker(); renderIconPicker(); refreshCatList(); refreshAll();
+  })();
+
+})();
+</script>
+</body>
+</html>
